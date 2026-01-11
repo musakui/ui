@@ -1,0 +1,10 @@
+package-lock.json
+
+dist
+types
+node_modules
+
+.env
+.env.test
+
+.vscode

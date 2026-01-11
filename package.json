@@ -1,0 +1,25 @@
+{
+	"name": "@musakui/ui",
+	"description": "web ui",
+	"author": "musakui",
+	"license": "MIT",
+	"repository": "github:musakui/ui",
+	"version": "0.0.0",
+	"type": "module",
+	"files": [
+		"types",
+		"lib"
+	],
+	"main": "./lib/index.js",
+	"types": "./types/index.d.ts",
+	"scripts": {
+		"test": "vitest",
+		"dev": "vite"
+	},
+	"dependencies": {
+	},
+	"devDependencies": {
+		"vite": "^7.3.0",
+		"vitest": "^4.0.15"
+	}
+}
