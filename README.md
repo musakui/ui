@@ -2,6 +2,8 @@
 
 > web ui
 
+[![npm](https://img.shields.io/npm/v/@musakui/ui.svg)](https://www.npmjs.com/package/@musakui/ui)
+
 ## Features
 
 - `html` tagged template literal (similar to [`lit-html`](https://github.com/lit/lit) and [`uhtml`](https://github.com/WebReflection/uhtml))

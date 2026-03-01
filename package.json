@@ -3,7 +3,9 @@
 	"description": "web ui",
 	"author": "musakui",
 	"license": "MIT",
-	"repository": "github:musakui/ui",
+	"repository": {
+		"url": "git+https://github.com/musakui/ui.git"
+	},
 	"version": "0.0.0",
 	"type": "module",
 	"files": [
@@ -12,6 +14,20 @@
 	],
 	"main": "./lib/index.js",
 	"types": "./types/index.d.ts",
+	"exports": {
+		"./signal": {
+			"types": "./types/index.d.ts",
+			"import": "./lib/signal/index.js"
+		},
+		"./tag": {
+			"types": "./types/index.d.ts",
+			"import": "./lib/tag/index.js"
+		},
+		".": {
+			"types": "./types/index.d.ts",
+			"import": "./lib/index.js"
+		}
+	},
 	"scripts": {
 		"test": "vitest",
 		"dev": "vite"
