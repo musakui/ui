@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { html, signal, computed } from '../lib/index.js'
+import { describe, it, expect, vi } from 'vitest'
+import { html, signal, computed } from '#/index.js'
 
 describe('reactive rendering', () => {
 	it('should re-render text content', () => {
@@ -41,6 +41,28 @@ describe('reactive rendering', () => {
 		expect(count.value).toBe(1)
 		btn.click()
 		expect(count.value).toBe(2)
+	})
+
+	it('should replace event listener on update', () => {
+		const spy1 = vi.fn()
+		const spy2 = vi.fn()
+		const frag = html`<button @click=${spy1}></button>`
+		const btn = frag.init()
+		btn.click()
+		expect(spy1).toHaveBeenCalledTimes(1)
+		frag.update(0, spy2)
+		btn.click()
+		expect(spy1).toHaveBeenCalledTimes(1)
+		expect(spy2).toHaveBeenCalledTimes(1)
+	})
+
+	it('should remove event listener when updated to null', () => {
+		const spy = vi.fn()
+		const frag = html`<button @click=${spy}></button>`
+		const btn = frag.init()
+		frag.update(0, null)
+		btn.click()
+		expect(spy).not.toHaveBeenCalled()
 	})
 
 	it('should handle computed content list', () => {

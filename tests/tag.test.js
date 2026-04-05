@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { html } from '../lib/tag/index.js'
+import { html } from '#/tag/html.js'
 
 describe('html template tag', () => {
 	it('should render simple html', () => {
@@ -71,5 +71,77 @@ describe('html template tag', () => {
 		expect(div.getAttribute('data-foo')).toBe('bar')
 		frag.update(0, null)
 		expect(cleanup).toHaveBeenCalled()
+	})
+
+	it('should bind multiple attributes on same element', () => {
+		const frag = html`<div id=${'foo'} title=${'bar'}></div>`
+		const div = frag.init()
+		expect(div.id).toBe('foo')
+		expect(div.title).toBe('bar')
+		frag.update(0, 'baz')
+		expect(div.id).toBe('baz')
+		frag.update(1, 'qux')
+		expect(div.title).toBe('qux')
+	})
+
+	it('should render multiple content holes', () => {
+		const frag = html`<div>${'hello'} ${'world'}</div>`
+		const div = frag.init()
+		expect(div.textContent).toBe('hello world')
+		frag.update(0, 'foo')
+		expect(div.textContent).toBe('foo world')
+		frag.update(1, 'bar')
+		expect(div.textContent).toBe('foo bar')
+	})
+
+	it('should render adjacent content holes', () => {
+		const frag = html`<div>${'a'}${'b'}</div>`
+		const div = frag.init()
+		expect(div.textContent).toBe('ab')
+		frag.update(0, 'x')
+		expect(div.textContent).toBe('xb')
+		frag.update(1, 'y')
+		expect(div.textContent).toBe('xy')
+	})
+
+	it('should render top-level content holes', () => {
+		const frag = html`${'before'}<span>mid</span>${'after'}`
+		frag.init()
+		expect(frag.textContent).toBe('beforemidafter')
+		frag.update(0, 'x')
+		expect(frag.textContent).toBe('xmidafter')
+		frag.update(1, 'y')
+		expect(frag.textContent).toBe('xmidy')
+	})
+
+	it('should handle mixed attribute and content bindings', () => {
+		const frag = html`<div class=${'a'}>${'hello'}</div>`
+		const div = frag.init()
+		expect(div.className).toBe('a')
+		expect(div.textContent).toBe('hello')
+		frag.update(0, 'b')
+		frag.update(1, 'world')
+		expect(div.className).toBe('b')
+		expect(div.textContent).toBe('world')
+	})
+
+	it('should produce independent clones', () => {
+		const frag = html`<div>${'original'}</div>`
+		const clone = frag.cloneNode()
+		const el1 = frag.init()
+		const el2 = clone.init()
+		expect(el1.textContent).toBe('original')
+		expect(el2.textContent).toBe('original')
+		frag.update(0, 'updated')
+		expect(el1.textContent).toBe('updated')
+		expect(el2.textContent).toBe('original')
+	})
+
+	it('should support multiple instances from same template strings', () => {
+		const make = (text) => html`<span>${text}</span>`
+		const el1 = make('foo').init()
+		const el2 = make('bar').init()
+		expect(el1.textContent).toBe('foo')
+		expect(el2.textContent).toBe('bar')
 	})
 })

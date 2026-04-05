@@ -1,6 +1,6 @@
 import { effect } from 'alien-signals'
 import { describe, it, expect } from 'vitest'
-import { signal, computed } from '../lib/signal/index.js'
+import { signal, computed } from '#/signal/index.js'
 
 describe('signal', () => {
 	it('should hold a value', () => {
