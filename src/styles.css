@@ -1,0 +1,120 @@
+@import 'tailwindcss';
+
+:root {
+	color-scheme: light dark;
+
+	--background: 0 0% 100%;
+	--foreground: 0 0% 3.6%;
+	--card: 0 0% 100%;
+	--card-foreground: 0 0% 3.6%;
+	--popover: 0 0% 100%;
+	--popover-foreground: 0 0% 3.6%;
+	--muted: 0 0% 96.1%;
+	--muted-foreground: 0 0% 45.1%;
+	--accent: 0 0% 9%;
+	--accent-foreground: 0 0% 98%;
+	--destructive: 0 84.2% 60.2%;
+	--destructive-foreground: 0 0% 98%;
+	--border: 0 0% 89.8%;
+	--input: 0 0% 89.8%;
+	--ring: 0 0% 3.6%;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--background: 0 0% 3.6%;
+		--foreground: 0 0% 98%;
+		--card: 0 0% 3.6%;
+		--card-foreground: 0 0% 98%;
+		--popover: 0 0% 3.6%;
+		--popover-foreground: 0 0% 98%;
+		--muted: 0 0% 14.9%;
+		--muted-foreground: 0 0% 63.9%;
+		--accent: 0 0% 98%;
+		--accent-foreground: 0 0% 9%;
+		--destructive: 0 62.8% 30.6%;
+		--destructive-foreground: 0 0% 98%;
+		--border: 0 0% 14.9%;
+		--input: 0 0% 14.9%;
+		--ring: 0 0% 83.3%;
+	}
+}
+
+@theme {
+	--color-background: hsl(var(--background));
+	--color-foreground: hsl(var(--foreground));
+	--color-card: hsl(var(--card));
+	--color-card-foreground: hsl(var(--card-foreground));
+	--color-muted: hsl(var(--muted));
+	--color-muted-foreground: hsl(var(--muted-foreground));
+	--color-accent: hsl(var(--accent));
+	--color-accent-foreground: hsl(var(--accent-foreground));
+	--color-destructive: hsl(var(--destructive));
+	--color-destructive-foreground: hsl(var(--destructive-foreground));
+	--color-border: hsl(var(--border));
+	--color-input: hsl(var(--input));
+	--color-ring: hsl(var(--ring));
+}
+
+/* ── Sheet / Drawer ────────────────────────────────────────────────────────── */
+.sheet-popover {
+	position: fixed;
+	margin: 0;
+	padding: 0;
+	border: none;
+	background: hsl(var(--card));
+	transition:
+		transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+		overlay 0.3s allow-discrete,
+		display 0.3s allow-discrete;
+}
+
+.sheet-popover::backdrop {
+	background: rgb(0 0 0 / 0.5);
+	transition:
+		opacity 0.3s,
+		overlay 0.3s allow-discrete,
+		display 0.3s allow-discrete;
+	opacity: 0;
+}
+.sheet-popover:popover-open::backdrop { opacity: 1; }
+@starting-style { .sheet-popover:popover-open::backdrop { opacity: 0; } }
+
+.sheet-right  { inset: 0 0 0 auto; width: min(24rem, 100%); border-left: 1px solid hsl(var(--border)); transform: translateX(100%); }
+.sheet-left   { inset: 0 auto 0 0; width: min(24rem, 100%); border-right: 1px solid hsl(var(--border)); transform: translateX(-100%); }
+.sheet-top    { inset: 0 0 auto 0; height: min(20rem, 100%); border-bottom: 1px solid hsl(var(--border)); transform: translateY(-100%); }
+.sheet-bottom { inset: auto 0 0 0; height: min(20rem, 100%); border-top: 1px solid hsl(var(--border)); transform: translateY(100%); }
+
+.sheet-popover:popover-open { transform: translate(0); }
+@starting-style {
+	.sheet-right:popover-open  { transform: translateX(100%); }
+	.sheet-left:popover-open   { transform: translateX(-100%); }
+	.sheet-top:popover-open    { transform: translateY(-100%); }
+	.sheet-bottom:popover-open { transform: translateY(100%); }
+}
+
+@layer base {
+	* {
+		scrollbar-width: thin;
+		outline-color: var(--color-ring);
+		border-color: var(--color-border);
+	}
+
+	button:not(:disabled) {
+		cursor: pointer;
+	}
+
+	.sort-arrow {
+		&[aria-sort]::after {
+			margin-left: 0.25em;
+		}
+
+		&[aria-sort='ascending']::after {
+			content: '↑';
+		}
+
+		&[aria-sort='descending']::after {
+			content: '↓';
+		}
+	}
+}
