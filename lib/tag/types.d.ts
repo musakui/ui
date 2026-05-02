@@ -1,11 +1,21 @@
-import type { PersistentFragment } from '#/util/persistentFragment'
+import type { PersistentFragment } from '#/util/persistentFragment.js'
+import type { NodePath } from '#/util/dom.js'
 
-type RawBind = readonly [t: 'r', el: Element]
-type AttrBind = readonly [t: 'a', el: Element, n: string]
-type ContentBind = readonly [t: 'c', el: PersistentFragment]
+type RawPart = readonly [t: 'r', el: Element]
+type AttrPart = readonly [t: 'a', el: Element, n: string]
+type ContentPart = readonly [t: 'c', el: PersistentFragment]
 
-export type TemplateBinding = AttrBind | RawBind | ContentBind
+export type TemplatePart = RawPart | AttrPart | ContentPart
 
-type CachedBind = readonly [path: number[], type: 'r' | 'a' | 'c', name?: string]
+export type WrapFn = (
+	str: string,
+	tag: string
+) => [content: string, unwrap: (frag: DocumentFragment) => void]
 
-export type BoundTemplate = readonly [frag: DocumentFragment, binds?: CachedBind[]]
+export type PartInfo = readonly [path: NodePath, type: 'r' | 'a' | 'c', name?: string]
+
+export type CachedTemplate = readonly [frag: DocumentFragment, parts?: PartInfo[]]
+
+export type BoundTemplate = readonly [frag: DocumentFragment, parts?: TemplatePart[]]
+
+export { NodePath }
