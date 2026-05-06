@@ -2,7 +2,8 @@ package-lock.json
 
 dist
 types
-node_modules
+node_modules/
+coverage/
 
 .env
 .env.test
