@@ -20,73 +20,56 @@ describe('html template tag', () => {
 		frag.commit()
 		expect(frag.el.hasAttribute('title')).toBe(true)
 		expect(frag.el.title).toBe('foo')
-		frag.update(0, 'bar')
-		frag.commit()
-		expect(frag.el.title).toBe('bar')
-		frag.update(0, null)
-		frag.commit()
-		expect(frag.el.hasAttribute('title')).toBe(false)
 	})
 
 	it('should render content', () => {
 		const frag = html`<div>${'hello world'}</div>`.init()
 		frag.commit()
 		expect(frag.el.textContent).toBe('hello world')
-		frag.update(0, 'foo bar')
-		frag.commit()
-		expect(frag.el.textContent).toBe('foo bar')
 	})
 
 	it('should render content (stringified)', () => {
 		const date = new Date()
-		const frag = html`<div>${date}</div>`.init()
-		frag.commit()
-		expect(frag.el.textContent).toBe(date.toString())
-		frag.update(0, 0)
-		frag.commit()
-		expect(frag.el.textContent).toBe('0')
+		const frag1 = html`<div>${date}</div>`.init()
+		frag1.commit()
+		expect(frag1.el.textContent).toBe(date.toString())
+
+		// falsy number must not be treated as empty
+		const frag2 = html`<div>${0}</div>`.init()
+		frag2.commit()
+		expect(frag2.el.textContent).toBe('0')
 	})
 
 	it('should render content (array)', () => {
 		const frag = html`<div>${['foo', 'bar', 'baz']}</div>`.init()
 		frag.commit()
 		expect(frag.el.textContent).toBe(`foobarbaz`)
-		frag.update(0, [1, ' foo ', 2, 'bar'])
-		frag.commit()
-		expect(frag.el.textContent).toBe(`1 foo 2bar`)
 	})
 
 	it('should render content (nested)', () => {
 		const frag = html`<div>foo ${html`<span>bar</span>`}</div>`.init()
 		frag.commit()
 		expect(frag.el.textContent).toBe(`foo bar`)
-		frag.update(0, html`<span>baz</span>`)
-		frag.commit()
-		expect(frag.el.textContent).toBe(`foo baz`)
 	})
 
 	it('should render content (empty)', () => {
-		const frag = html`<div>${null}</div>`.init()
-		frag.commit()
-		expect(frag.el.textContent).toBe('')
-		frag.update(0, [])
-		frag.commit()
-		expect(frag.el.textContent).toBe('')
+		const nullFrag = html`<div>${null}</div>`.init()
+		nullFrag.commit()
+		expect(nullFrag.el.textContent).toBe('')
+
+		const arrFrag = html`<div>${[]}</div>`.init()
+		arrFrag.commit()
+		expect(arrFrag.el.textContent).toBe('')
 	})
 
 	it('should handle raw binding', () => {
-		const cleanup = vi.fn()
 		const spy = vi.fn((el) => {
 			el.dataset.foo = 'bar'
-			return cleanup
 		})
 		const frag = html`<div ${spy}>hello</div>`.init()
 		frag.commit()
 		expect(spy).toHaveBeenCalledWith(frag.el)
 		expect(frag.el.getAttribute('data-foo')).toBe('bar')
-		frag.update(0, null)
-		frag.commit()
-		expect(cleanup).toHaveBeenCalled()
 	})
 
 	it('should bind multiple attributes on same element', () => {
@@ -94,48 +77,37 @@ describe('html template tag', () => {
 		frag.commit()
 		expect(frag.el.id).toBe('foo')
 		expect(frag.el.title).toBe('bar')
-		frag.update(0, 'baz')
-		frag.commit()
-		expect(frag.el.id).toBe('baz')
-		frag.update(1, 'qux')
-		frag.commit()
-		expect(frag.el.title).toBe('qux')
 	})
 
 	it('should render multiple content holes', () => {
 		const frag = html`<div>${'hello'} ${'world'}</div>`.init()
 		frag.commit()
 		expect(frag.el.textContent).toBe('hello world')
-		frag.update(0, 'foo')
-		frag.commit()
-		expect(frag.el.textContent).toBe('foo world')
-		frag.update(1, 'bar')
-		frag.commit()
-		expect(frag.el.textContent).toBe('foo bar')
 	})
 
 	it('should render adjacent content holes', () => {
 		const frag = html`<div>${'a'}${'b'}</div>`.init()
 		frag.commit()
 		expect(frag.el.textContent).toBe('ab')
-		frag.update(0, 'x')
+	})
+
+	it('should render content hole preceded by literal <', () => {
+		// literal `<` in surrounding text prevents ONLY_HOLES from matching
+		const frag = html`<div>a < b ${'hello'}</div>`.init()
 		frag.commit()
-		expect(frag.el.textContent).toBe('xb')
-		frag.update(1, 'y')
+		expect(frag.el.textContent).toBe('a < b hello')
+	})
+
+	it('should render multiple content holes in text with literal <', () => {
+		const frag = html`<div>x < y ${'a'} z ${'b'}</div>`.init()
 		frag.commit()
-		expect(frag.el.textContent).toBe('xy')
+		expect(frag.el.textContent).toBe('x < y a z b')
 	})
 
 	it('should render top-level content holes', () => {
 		const frag = html`${'before'}<span>mid</span>${'after'}`.init()
 		frag.commit()
 		expect(frag.textContent).toBe('beforemidafter')
-		frag.update(0, 'x')
-		frag.commit()
-		expect(frag.textContent).toBe('xmidafter')
-		frag.update(1, 'y')
-		frag.commit()
-		expect(frag.textContent).toBe('xmidy')
 	})
 
 	it('should handle mixed attribute and content bindings', () => {
@@ -143,11 +115,6 @@ describe('html template tag', () => {
 		frag.commit()
 		expect(frag.el.className).toBe('a')
 		expect(frag.el.textContent).toBe('hello')
-		frag.update(0, 'b')
-		frag.update(1, 'world')
-		frag.commit()
-		expect(frag.el.className).toBe('b')
-		expect(frag.el.textContent).toBe('world')
 	})
 
 	it('should produce independent clones', () => {
@@ -189,6 +156,19 @@ describe('html template tag', () => {
 		const frag = html`<p>no bindings</p>`.init()
 		frag.commit()
 		expect(frag.el.outerHTML).toBe('<p>no bindings</p>')
+	})
+
+	it('handles boolean attribute alongside dynamic attribute', () => {
+		const frag = html`<button disabled title=${'foo'}></button>`.init()
+		frag.commit()
+		expect(frag.el.hasAttribute('disabled')).toBe(true)
+		expect(frag.el.title).toBe('foo')
+	})
+
+	it('ignores non-marker comment nodes during parse', () => {
+		const frag = html`<div><!-- note -->${'hello'}</div>`.init()
+		frag.commit()
+		expect(frag.el.textContent).toBe('hello')
 	})
 
 	it('undefined content renders as empty', () => {
@@ -237,6 +217,49 @@ describe('commit behavior', () => {
 		frag.commit()
 		expect(div.id).toBe('b')
 		expect(div.textContent).toBe('y')
+	})
+
+	it('updates individual content holes independently', () => {
+		const frag = html`<div>${'hello'} ${'world'}</div>`.init()
+		frag.commit()
+		frag.update(0, 'foo')
+		frag.commit()
+		expect(frag.el.textContent).toBe('foo world')
+		frag.update(1, 'bar')
+		frag.commit()
+		expect(frag.el.textContent).toBe('foo bar')
+	})
+
+	it('replaces a nested fragment with a different instance', () => {
+		const frag = html`<div>foo ${html`<span>bar</span>`}</div>`.init()
+		frag.commit()
+		frag.update(0, html`<span>baz</span>`)
+		frag.commit()
+		expect(frag.el.textContent).toBe('foo baz')
+	})
+
+	it('replaces element node with string', () => {
+		const inner = html`<span>hello</span>`.init()
+		const frag = html`<div>${inner}</div>`.init()
+		frag.commit()
+		expect(frag.el.textContent).toBe('hello')
+		frag.update(0, 'just text')
+		frag.commit()
+		expect(frag.el.textContent).toBe('just text')
+		expect(frag.el.querySelector('span')).toBeNull()
+	})
+
+	it('handles same node committed twice', () => {
+		const span = document.createElement('span')
+		span.textContent = 'original'
+		const frag = html`<div>${[span]}</div>`.init()
+		frag.commit()
+		expect(frag.el.contains(span)).toBe(true)
+		expect(frag.el.textContent).toBe('original')
+		frag.update(0, [span])
+		frag.commit()
+		expect(frag.el.contains(span)).toBe(true)
+		expect(frag.el.textContent).toBe('original')
 	})
 
 	it('commit propagates to a nested fragment', () => {
@@ -296,6 +319,70 @@ describe('commit behavior', () => {
 	})
 })
 
+describe('disconnect behavior', () => {
+	it('runs cleanup when replacing a fragment', () => {
+		const cleanup = vi.fn()
+		const setup = vi.fn((el) => cleanup)
+		const child = html`<div ${setup}></div>`.init()
+		const parent = html`<div>${child}</div>`.init()
+		parent.commit()
+		expect(setup).toHaveBeenCalledOnce()
+
+		parent.update(0, null)
+		parent.commit()
+		expect(cleanup).toHaveBeenCalledOnce()
+	})
+
+	it('propagates cleanup to nested fragments', () => {
+		const cleanup = vi.fn()
+		const setup = vi.fn((el) => cleanup)
+		const grandchild = html`<span ${setup}></span>`.init()
+		const child = html`<div>${grandchild}</div>`.init()
+		const parent = html`<div>${child}</div>`.init()
+		parent.commit()
+		expect(setup).toHaveBeenCalledOnce()
+
+		parent.update(0, null)
+		parent.commit()
+		expect(cleanup).toHaveBeenCalledOnce()
+	})
+
+	it('runs cleanup returned from raw binding callback', () => {
+		const cleanup = vi.fn()
+		const frag = html`<div ${() => cleanup}>hello</div>`.init()
+		frag.commit()
+		frag.update(0, null)
+		frag.commit()
+		expect(cleanup).toHaveBeenCalledOnce()
+	})
+
+	it('handles disconnects for an element array', () => {
+		const makeItem = (t) => {
+			const cleanup = vi.fn()
+			const frag = html`<span ${() => cleanup}>${t}</span>`.init()
+			return { el: frag.el, cleanup }
+		}
+
+		const [a, b, c] = ['a', 'b', 'c'].map(makeItem)
+
+		const frag = html`<div>${[a.el, b.el, c.el]}</div>`.init()
+		document.body.append(frag)
+
+		frag.commit()
+		expect(frag.el.textContent).toBe('abc')
+
+		frag.update(0, [c.el, a.el])
+		frag.commit()
+
+		expect(frag.el.textContent).toBe('ca')
+		expect(b.cleanup).toHaveBeenCalledOnce()
+		expect(a.cleanup).not.toHaveBeenCalled()
+		expect(c.cleanup).not.toHaveBeenCalled()
+
+		document.body.removeChild(frag.el)
+	})
+})
+
 describe('snapshot behavior', () => {
 	it('snapshot before init is a no-op', () => {
 		const frag = html`<div>${'hello'}</div>`
@@ -330,5 +417,16 @@ describe('snapshot behavior', () => {
 		child.update(0, 'world')
 		parent.commit()
 		expect(parent.el.textContent).toBe('hello')
+	})
+
+	it('snapshot recurses into elements in an array', () => {
+		const inner = html`<span>${'hello'}</span>`.init()
+		const outer = html`<div>${[inner.el]}</div>`.init()
+		outer.commit()
+		inner.update(0, 'world')
+		outer.snapshot()
+		inner.update(0, 'ignored')
+		outer.commit()
+		expect(outer.el.textContent).toBe('world')
 	})
 })

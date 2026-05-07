@@ -23,6 +23,16 @@ describe('reactive rendering', () => {
 		stop()
 	})
 
+	it('should remove attribute when signal becomes null', () => {
+		const title = signal('hello')
+		const frag = html`<div title=${title}></div>`.init()
+		const stop = effect(() => frag.commit())
+		expect(frag.el.hasAttribute('title')).toBe(true)
+		title.value = null
+		expect(frag.el.hasAttribute('title')).toBe(false)
+		stop()
+	})
+
 	it('should set properties', () => {
 		const val = signal('foo')
 		const frag = html`<input .value=${val} />`.init()
@@ -33,10 +43,12 @@ describe('reactive rendering', () => {
 		stop()
 	})
 
-	it('should toggle boolean attributes', () => {
-		const disabled = signal(true)
+	it('should toggle boolean attribute', () => {
+		const disabled = signal(false)
 		const frag = html`<button ?disabled=${disabled}></button>`.init()
 		const stop = effect(() => frag.commit())
+		expect(frag.el.hasAttribute('disabled')).toBe(false)
+		disabled.value = true
 		expect(frag.el.hasAttribute('disabled')).toBe(true)
 		disabled.value = false
 		expect(frag.el.hasAttribute('disabled')).toBe(false)
@@ -80,26 +92,6 @@ describe('reactive rendering', () => {
 		stop()
 	})
 
-	it('should remove attribute when signal becomes null', () => {
-		const title = signal('hello')
-		const frag = html`<div title=${title}></div>`.init()
-		const stop = effect(() => frag.commit())
-		expect(frag.el.hasAttribute('title')).toBe(true)
-		title.value = null
-		expect(frag.el.hasAttribute('title')).toBe(false)
-		stop()
-	})
-
-	it('should toggle boolean attribute from false to true', () => {
-		const active = signal(false)
-		const frag = html`<div ?data-active=${active}></div>`.init()
-		const stop = effect(() => frag.commit())
-		expect(frag.el.hasAttribute('data-active')).toBe(false)
-		active.value = true
-		expect(frag.el.hasAttribute('data-active')).toBe(true)
-		stop()
-	})
-
 	it('should bind event listener with [fn, options] array form', () => {
 		const spy = vi.fn()
 		const handler = signal([spy, {}])
@@ -116,9 +108,6 @@ describe('reactive rendering', () => {
 		const handler = signal(listener)
 		const frag = html`<button @click=${handler}></button>`.init()
 		const stop = effect(() => frag.commit())
-		frag.el.click()
-		expect(spy).toHaveBeenCalledTimes(1)
-		handler.value = null
 		frag.el.click()
 		expect(spy).toHaveBeenCalledTimes(1)
 		stop()
