@@ -30,6 +30,10 @@
 			"types": "./types/index.d.ts",
 			"import": "./lib/api/index.js"
 		},
+		"./ce": {
+			"types": "./types/index.d.ts",
+			"import": "./lib/ce/index.js"
+		},
 		"./idb": {
 			"types": "./types/index.d.ts",
 			"import": "./lib/idb/index.js"
