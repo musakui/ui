@@ -49,3 +49,7 @@ export type ElementOptions<S extends Rec> = {
 	 */
 	disconnected?: (this: CustElement<S>) => void
 }
+
+export type UiElementOpts<S extends Rec> = {
+	state?: () => S
+}
