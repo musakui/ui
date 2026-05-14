@@ -15,21 +15,18 @@
 ### Basic HTML and reactive rendering
 
 ```js
-import { html, signal, computed } from '@musakui/ui'
+import { html, signal, computed, mount } from '@musakui/ui'
 
 function Counter() {
 	const count = signal(0)
 	const double = computed(() => count.value * 2)
 
-	const frag = html`<div>
+	return html`<div>
 		<p>Count: ${count}</p>
 		<p>Double: ${double}</p>
 		<button @click=${() => count.value++}>Increment</button>
 	</div>`
-
-	// nothing is created until `.init()` is called
-	return frag.init()
 }
 
-document.body.append(Counter())
+mount(Counter, document.body)
 ```
