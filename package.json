@@ -6,7 +6,7 @@
 	"repository": {
 		"url": "git+https://github.com/musakui/ui.git"
 	},
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"type": "module",
 	"files": [
 		"types",
@@ -33,6 +33,10 @@
 		"./idb": {
 			"types": "./types/index.d.ts",
 			"import": "./lib/idb/index.js"
+		},
+		"./router": {
+			"types": "./types/index.d.ts",
+			"import": "./lib/router/index.js"
 		},
 		".": {
 			"types": "./types/index.d.ts",
