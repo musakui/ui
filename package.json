@@ -38,6 +38,14 @@
 			"types": "./types/index.d.ts",
 			"import": "./lib/router/index.js"
 		},
+		"./blurhash": {
+			"types": "./types/index.d.ts",
+			"import": "./lib/blurhash/index.js"
+		},
+		"./blurhash/core": {
+			"types": "./types/index.d.ts",
+			"import": "./lib/blurhash/core.js"
+		},
 		".": {
 			"types": "./types/index.d.ts",
 			"import": "./lib/index.js"
