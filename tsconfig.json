@@ -1,10 +1,9 @@
 {
 	"compilerOptions": {
-		"strict": true,
 		"noEmit": true,
 		"allowJs": true,
+		"checkJs": true,
 		"target": "ESNext",
-		"skipLibCheck": true,
 		"stripInternal": true,
 		"types": ["vite/client"],
 		"lib": ["ESNext", "DOM"]
