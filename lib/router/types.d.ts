@@ -1,20 +1,15 @@
 type Rec<T = unknown> = Record<string, T>
 
-export type RouteDefinition<Info extends Rec> = Info & {
-	/**
-	 * pathname definition
-	 *
-	 * paths with parameters (e.g. `/:id`) will be matched with `URLPattern`
-	 */
-	path: string
-}
+type Awaitable<T> = T | Promise<T>
 
-export type RouteMatch<Info extends Rec> = RouteDefinition<Info> & {
-	/**
-	 * matched path parameters
-	 */
-	params?: Rec<string | undefined>
-}
+type MaybeRedirect = string | URL | null | undefined
+
+export type Renderable = DocumentFragment | string
+
+export type Page = (
+	match: MatchedRoute<RouteInfo>,
+	signal?: AbortSignal
+) => Awaitable<Renderable>
 
 export type RouteInfo = {
 	name?: string
@@ -22,20 +17,39 @@ export type RouteInfo = {
 	meta?: Rec
 }
 
-export type Renderable = DocumentFragment | string
+export type RouteDefinition = RouteInfo & {
+	/**
+	 * pathname definition
+	 *
+	 * paths with parameters (e.g. `/:id`) will be matched with `URLPattern`
+	 */
+	path: string
 
-export type Page = (match: RouteMatch<RouteInfo>) => Renderable
-
-type RouteConfig = RouteInfo & {
 	page: Page | (() => Promise<{ default: Page }>)
 }
 
+export type MatchedRoute<T extends Rec> = Omit<T, 'path'> & {
+	/**
+	 * matched pathname
+	 */
+	path: string
+
+	/**
+	 * matched path parameters
+	 */
+	params?: Rec<string | undefined>
+}
+
+export type RouteMatch = MatchedRoute<RouteDefinition>
+
 export type RouterOpts = {
-	routes: RouteDefinition<RouteConfig>[]
+	routes: RouteDefinition[]
 
-	loadingPage?: () => Renderable
+	render(r?: Renderable | Error | null): void
 
-	notFoundPage?: () => Renderable
+	onBeforeNav?: (evt: NavigateEvent, match: RouteMatch | null) => MaybeRedirect
 
-	errorPage?: (err: unknown) => Renderable
+	onBeforeLoad?: (match: RouteMatch, signal?: AbortSignal) => Awaitable<MaybeRedirect>
+
+	onAfterLoad?: (evt: NavigateEvent, match: RouteMatch) => Awaitable<void>
 }
