@@ -98,6 +98,12 @@ export interface ApiInstance {
 	patch(path: string, opts?: RequestOptions): ResponseReader
 
 	/**
+	 * Make a HTTP QUERY request.
+	 * @param path relative path
+	 */
+	query(path: string, opts?: RequestOptions): ResponseReader
+
+	/**
 	 * Make a HTTP DELETE request.
 	 * @param path relative path
 	 */
