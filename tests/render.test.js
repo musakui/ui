@@ -33,6 +33,18 @@ describe('reactive rendering', () => {
 		stop()
 	})
 
+	it('other falsy stringify as attribute values rather than removing', () => {
+		const val = signal(false)
+		const frag = html`<div title=${val}></div>`.init()
+		const stop = effect(() => frag.commit())
+		expect(frag.el.getAttribute('title')).toBe('false')
+		val.value = 0
+		expect(frag.el.getAttribute('title')).toBe('0')
+		val.value = ''
+		expect(frag.el.getAttribute('title')).toBe('')
+		stop()
+	})
+
 	it('should set properties', () => {
 		const val = signal('foo')
 		const frag = html`<input .value=${val} />`.init()
@@ -115,9 +127,10 @@ describe('reactive rendering', () => {
 
 	it('should swap between different conditional fragments', () => {
 		const show = signal(true)
-		const frag = html`<div>${computed(() =>
-			show.value ? html`<span>yes</span>` : html`<em>no</em>`
-		)}</div>`.init()
+		const contents = computed(() => {
+			return show.value ? html`<span>yes</span>` : html`<em>no</em>`
+		})
+		const frag = html`<div>${contents}</div>`.init()
 		const stop = effect(() => frag.commit())
 		expect(frag.el.querySelector('span')).toBeTruthy()
 		expect(frag.el.querySelector('em')).toBeNull()
@@ -129,11 +142,11 @@ describe('reactive rendering', () => {
 
 	it('should handle computed content list', () => {
 		const list = signal(['foo', 'bar'])
-		// prettier-ignore
-		const frag = html`<div>${computed(() => {
+		const contents = computed(() => {
 			if (!list.value.length) return html`<div>no items</div>`
 			return list.value.map((v) => html`<div>${v}</div>`)
-		})}</div>`.init()
+		})
+		const frag = html`<div>${contents}</div>`.init()
 		const stop = effect(() => frag.commit())
 		expect(frag.el.textContent).toBe('foobar')
 		list.value = ['foo', 'baz', 'bar']

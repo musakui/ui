@@ -62,6 +62,12 @@ describe('html template tag', () => {
 		expect(arrFrag.el.textContent).toBe('')
 	})
 
+	it('undefined content renders as empty', () => {
+		const frag = html`<div>${undefined}</div>`.init()
+		frag.commit()
+		expect(frag.el.textContent).toBe('')
+	})
+
 	it('should handle raw binding', () => {
 		const spy = vi.fn((el) => {
 			el.dataset.foo = 'bar'
@@ -152,12 +158,6 @@ describe('html template tag', () => {
 		expect(frag.el).toBeUndefined()
 	})
 
-	it('static template with no bindings renders correctly', () => {
-		const frag = html`<p>no bindings</p>`.init()
-		frag.commit()
-		expect(frag.el.outerHTML).toBe('<p>no bindings</p>')
-	})
-
 	it('handles boolean attribute alongside dynamic attribute', () => {
 		const frag = html`<button disabled title=${'foo'}></button>`.init()
 		frag.commit()
@@ -169,12 +169,6 @@ describe('html template tag', () => {
 		const frag = html`<div><!-- note -->${'hello'}</div>`.init()
 		frag.commit()
 		expect(frag.el.textContent).toBe('hello')
-	})
-
-	it('undefined content renders as empty', () => {
-		const frag = html`<div>${undefined}</div>`.init()
-		frag.commit()
-		expect(frag.el.textContent).toBe('')
 	})
 
 	it('undefined attribute value removes the attribute', () => {
@@ -249,29 +243,6 @@ describe('commit behavior', () => {
 		expect(frag.el.querySelector('span')).toBeNull()
 	})
 
-	it('handles same node committed twice', () => {
-		const span = document.createElement('span')
-		span.textContent = 'original'
-		const frag = html`<div>${[span]}</div>`.init()
-		frag.commit()
-		expect(frag.el.contains(span)).toBe(true)
-		expect(frag.el.textContent).toBe('original')
-		frag.update(0, [span])
-		frag.commit()
-		expect(frag.el.contains(span)).toBe(true)
-		expect(frag.el.textContent).toBe('original')
-	})
-
-	it('commit propagates to a nested fragment', () => {
-		const child = html`<span>${'hello'}</span>`
-		const parent = html`<div>${child}</div>`.init()
-		parent.commit()
-		expect(parent.el.textContent).toBe('hello')
-		child.update(0, 'world')
-		parent.commit()
-		expect(parent.el.textContent).toBe('world')
-	})
-
 	it('commit propagates through a deep tree', () => {
 		const leaf = html`<em>${'leaf'}</em>`
 		const mid = html`<span>${leaf}</span>`
@@ -294,7 +265,178 @@ describe('commit behavior', () => {
 		expect(parent.el.textContent).toBe('world')
 	})
 
-	it('updates multi-child content hole that has siblings', () => {
+	it('commit propagates to each fragment in an array', () => {
+		const make = (v) => html`<li>${v}</li>`
+		// prettier-ignore
+		const frag = html`<ul>${['a', 'b', 'c'].map(make)}</ul>`.init()
+		frag.commit()
+		expect(frag.el.textContent).toBe('abc')
+		frag.update(0, ['a', 'B', 'c'].map(make))
+		frag.commit()
+		expect(frag.el.textContent).toBe('aBc')
+	})
+})
+
+describe('arrays of elements with children', () => {
+	it('renders elements with children', () => {
+		const a = html`<span>alpha</span>`.init().el
+		const b = html`<span>beta</span>`.init().el
+		const frag = html`<div>${[a, b]}</div>`.init()
+		frag.commit()
+		expect(frag.el.textContent).toBe('alphabeta')
+		expect(frag.el.contains(a)).toBe(true)
+		expect(frag.el.contains(b)).toBe(true)
+	})
+
+	it('replaces array of elements with a new array', () => {
+		const a = html`<span>old-a</span>`.init().el
+		const b = html`<span>old-b</span>`.init().el
+		const frag = html`<div>${[a, b]}</div>`.init()
+		frag.commit()
+		const c = html`<div>new-c</div>`.init().el
+		const d = html`<div>new-d</div>`.init().el
+		frag.update(0, [c, d])
+		frag.commit()
+		expect(frag.el.textContent).toBe('new-cnew-d')
+		expect(frag.el.contains(a)).toBe(false)
+		expect(frag.el.contains(b)).toBe(false)
+		expect(frag.el.contains(c)).toBe(true)
+		expect(frag.el.contains(d)).toBe(true)
+	})
+
+	it('child nodes of elements survive being repositioned', () => {
+		const wrapper = html`<section><p>deep</p></section>`.init().el
+		const inner = wrapper.querySelector('p')
+		const sibling = html`<em>sib</em>`.init().el
+		const frag = html`<div>${[wrapper]}</div>`.init()
+		frag.commit()
+		expect(frag.el.textContent).toBe('deep')
+		frag.update(0, [sibling, wrapper])
+		frag.commit()
+		expect(frag.el.textContent).toBe('sibdeep')
+		expect(wrapper.contains(inner)).toBe(true)
+	})
+
+	it('reorders elements with children without losing their subtrees', () => {
+		const a = html`<li>first</li>`.init().el
+		const b = html`<li>second</li>`.init().el
+		const c = html`<li>third</li>`.init().el
+		// prettier-ignore
+		const frag = html`<ul>${[a, b, c]}</ul>`.init()
+		frag.commit()
+		expect(frag.el.textContent).toBe('firstsecondthird')
+		frag.update(0, [c, b, a])
+		frag.commit()
+		expect(frag.el.textContent).toBe('thirdsecondfirst')
+		expect(a.textContent).toBe('first')
+		expect(b.textContent).toBe('second')
+		expect(c.textContent).toBe('third')
+	})
+
+	it('grows the array of elements', () => {
+		const a = html`<span>a</span>`.init().el
+		const b = html`<span>b</span>`.init().el
+		const c = html`<span>c</span>`.init().el
+		const frag = html`<div>${[a]}</div>`.init()
+		frag.commit()
+		frag.update(0, [a, b, c])
+		frag.commit()
+		expect(frag.el.textContent).toBe('abc')
+	})
+
+	it('shrinks the array of elements', () => {
+		const a = html`<span>a</span>`.init().el
+		const b = html`<span>b</span>`.init().el
+		const c = html`<span>c</span>`.init().el
+		const frag = html`<div>${[a, b, c]}</div>`.init()
+		frag.commit()
+		frag.update(0, [a])
+		frag.commit()
+		expect(frag.el.textContent).toBe('a')
+		expect(frag.el.contains(b)).toBe(false)
+		expect(frag.el.contains(c)).toBe(false)
+	})
+
+	it('removes elements from the front', () => {
+		const a = html`<span>a</span>`.init().el
+		const b = html`<span>b</span>`.init().el
+		const c = html`<span>c</span>`.init().el
+		const frag = html`<div>${[a, b, c]}</div>`.init()
+		frag.commit()
+		frag.update(0, [b, c])
+		frag.commit()
+		expect(frag.el.textContent).toBe('bc')
+		expect(frag.el.contains(a)).toBe(false)
+		expect(frag.el.contains(b)).toBe(true)
+		expect(frag.el.contains(c)).toBe(true)
+	})
+
+	it('removes elements from the middle', () => {
+		const a = html`<span>a</span>`.init().el
+		const b = html`<span>b</span>`.init().el
+		const c = html`<span>c</span>`.init().el
+		const frag = html`<div>${[a, b, c]}</div>`.init()
+		frag.commit()
+		frag.update(0, [a, c])
+		frag.commit()
+		expect(frag.el.textContent).toBe('ac')
+		expect(frag.el.contains(a)).toBe(true)
+		expect(frag.el.contains(b)).toBe(false)
+		expect(frag.el.contains(c)).toBe(true)
+	})
+
+	it('grows from empty to multiple elements', () => {
+		const a = html`<span>a</span>`.init().el
+		const b = html`<span>b</span>`.init().el
+		const frag = html`<div>${[]}</div>`.init()
+		frag.commit()
+		expect(frag.el.textContent).toBe('')
+		frag.update(0, [a, b])
+		frag.commit()
+		expect(frag.el.textContent).toBe('ab')
+		expect(frag.el.contains(a)).toBe(true)
+		expect(frag.el.contains(b)).toBe(true)
+	})
+
+	it('keeps multiple elements already in position', () => {
+		const a = html`<span>a</span>`.init().el
+		const b = html`<span>b</span>`.init().el
+		const frag = html`<div>${[a, b]}</div>`.init()
+		frag.commit()
+		frag.update(0, [a, b])
+		frag.commit()
+		expect(frag.el.textContent).toBe('ab')
+		expect(frag.el.contains(a)).toBe(true)
+		expect(frag.el.contains(b)).toBe(true)
+	})
+
+	it('keeps single element already in position', () => {
+		const span = document.createElement('span')
+		span.textContent = 'original'
+		const frag = html`<div>${[span]}</div>`.init()
+		frag.commit()
+		expect(frag.el.contains(span)).toBe(true)
+		expect(frag.el.textContent).toBe('original')
+		frag.update(0, [span])
+		frag.commit()
+		expect(frag.el.contains(span)).toBe(true)
+		expect(frag.el.textContent).toBe('original')
+	})
+
+	it('handles mixed text and element arrays across update cycles', () => {
+		const a = html`<span>alpha</span>`.init().el
+		const b = html`<span>beta</span>`.init().el
+		const frag = html`<div>${[a, '-', b]}</div>`.init()
+		frag.commit()
+		expect(frag.el.textContent).toBe('alpha-beta')
+		frag.update(0, [b, '|', a])
+		frag.commit()
+		expect(frag.el.textContent).toBe('beta|alpha')
+		expect(frag.el.contains(a)).toBe(true)
+		expect(frag.el.contains(b)).toBe(true)
+	})
+
+	it('array in slot with sibling elements shrinks and grows', () => {
 		// PF has siblings (<b>) so updates go through the splice path
 		const frag = html`${'x'}<b>mid</b>`.init()
 		frag.commit()
@@ -307,15 +449,20 @@ describe('commit behavior', () => {
 		expect(frag.textContent).toBe('xymid')
 	})
 
-	it('commit propagates to each fragment in an array', () => {
-		const make = (v) => html`<li>${v}</li>`
-		// prettier-ignore
-		const frag = html`<ul>${['a', 'b', 'c'].map(make)}</ul>`.init()
+	it('two independent slots in the same parent stay isolated', () => {
+		const a = html`<span>a</span>`.init().el
+		const b = html`<span>b</span>`.init().el
+		const c = html`<span>c</span>`.init().el
+		const d = html`<span>d</span>`.init().el
+		const frag = html`<div>${[a, b]}${[c, d]}</div>`.init()
 		frag.commit()
-		expect(frag.el.textContent).toBe('abc')
-		frag.update(0, ['a', 'B', 'c'].map(make))
+		expect(frag.el.textContent).toBe('abcd')
+		frag.update(0, [b, a])
 		frag.commit()
-		expect(frag.el.textContent).toBe('aBc')
+		expect(frag.el.textContent).toBe('bacd')
+		frag.update(1, [d])
+		frag.commit()
+		expect(frag.el.textContent).toBe('bad')
 	})
 })
 
