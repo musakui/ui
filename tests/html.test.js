@@ -503,6 +503,23 @@ describe('disconnect behavior', () => {
 		expect(cleanup).toHaveBeenCalledOnce()
 	})
 
+	it('propagates child cleanup even when dispose throws', () => {
+		const cleanup = vi.fn()
+		const grandchild = html`<span ${() => cleanup}></span>`.init()
+		const child = html`<div>${grandchild}</div>`.init()
+		child.setDispose(() => {
+			throw new Error('dispose error')
+		})
+
+		const parent = html`<section>${child}</section>`.init()
+		parent.commit()
+
+		parent.update(0, null)
+		parent.commit()
+
+		expect(cleanup).toHaveBeenCalledOnce()
+	})
+
 	it('handles disconnects for an element array', () => {
 		const makeItem = (t) => {
 			const cleanup = vi.fn()
