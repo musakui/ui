@@ -381,6 +381,28 @@ describe('disconnect behavior', () => {
 
 		document.body.removeChild(frag.el)
 	})
+
+	it('a throwing dispose does not leave the fragment stuck for future disconnects', () => {
+		const inner = html`<span>hello</span>`.init()
+		inner.setDispose(() => {
+			throw new Error('cleanup error')
+		})
+
+		const outer = html`<div>${inner}</div>`.init()
+		outer.commit()
+
+		// First disconnect: throws because inner.#dispose throws
+		outer.update(0, null)
+		expect(() => outer.commit()).toThrow('cleanup error')
+
+		// Re-insert inner so we can disconnect it a second time
+		outer.update(0, inner)
+		outer.commit()
+
+		// Second disconnect: #dispose is already null → no throw
+		outer.update(0, null)
+		expect(() => outer.commit()).not.toThrow()
+	})
 })
 
 describe('snapshot behavior', () => {
