@@ -319,6 +319,171 @@ describe('commit behavior', () => {
 	})
 })
 
+describe('arrays of elements with children', () => {
+	it('renders elements with children', () => {
+		const a = html`<span>alpha</span>`.init().el
+		const b = html`<span>beta</span>`.init().el
+		const frag = html`<div>${[a, b]}</div>`.init()
+		frag.commit()
+		expect(frag.el.textContent).toBe('alphabeta')
+		expect(frag.el.contains(a)).toBe(true)
+		expect(frag.el.contains(b)).toBe(true)
+	})
+
+	it('replaces array of elements with a new array', () => {
+		const a = html`<span>old-a</span>`.init().el
+		const b = html`<span>old-b</span>`.init().el
+		const frag = html`<div>${[a, b]}</div>`.init()
+		frag.commit()
+		const c = html`<div>new-c</div>`.init().el
+		const d = html`<div>new-d</div>`.init().el
+		frag.update(0, [c, d])
+		frag.commit()
+		expect(frag.el.textContent).toBe('new-cnew-d')
+		expect(frag.el.contains(a)).toBe(false)
+		expect(frag.el.contains(b)).toBe(false)
+		expect(frag.el.contains(c)).toBe(true)
+		expect(frag.el.contains(d)).toBe(true)
+	})
+
+	it('child nodes of elements survive being repositioned', () => {
+		const wrapper = html`<section><p>deep</p></section>`.init().el
+		const inner = wrapper.querySelector('p')
+		const sibling = html`<em>sib</em>`.init().el
+		const frag = html`<div>${[wrapper]}</div>`.init()
+		frag.commit()
+		expect(frag.el.textContent).toBe('deep')
+		frag.update(0, [sibling, wrapper])
+		frag.commit()
+		expect(frag.el.textContent).toBe('sibdeep')
+		expect(wrapper.contains(inner)).toBe(true)
+	})
+
+	it('reorders elements with children without losing their subtrees', () => {
+		const a = html`<li>first</li>`.init().el
+		const b = html`<li>second</li>`.init().el
+		const c = html`<li>third</li>`.init().el
+		// prettier-ignore
+		const frag = html`<ul>${[a, b, c]}</ul>`.init()
+		frag.commit()
+		expect(frag.el.textContent).toBe('firstsecondthird')
+		frag.update(0, [c, b, a])
+		frag.commit()
+		expect(frag.el.textContent).toBe('thirdsecondfirst')
+		expect(a.textContent).toBe('first')
+		expect(b.textContent).toBe('second')
+		expect(c.textContent).toBe('third')
+	})
+
+	it('grows the array of elements', () => {
+		const a = html`<span>a</span>`.init().el
+		const b = html`<span>b</span>`.init().el
+		const c = html`<span>c</span>`.init().el
+		const frag = html`<div>${[a]}</div>`.init()
+		frag.commit()
+		frag.update(0, [a, b, c])
+		frag.commit()
+		expect(frag.el.textContent).toBe('abc')
+	})
+
+	it('shrinks the array of elements', () => {
+		const a = html`<span>a</span>`.init().el
+		const b = html`<span>b</span>`.init().el
+		const c = html`<span>c</span>`.init().el
+		const frag = html`<div>${[a, b, c]}</div>`.init()
+		frag.commit()
+		frag.update(0, [a])
+		frag.commit()
+		expect(frag.el.textContent).toBe('a')
+		expect(frag.el.contains(b)).toBe(false)
+		expect(frag.el.contains(c)).toBe(false)
+	})
+
+	it('removes elements from the front', () => {
+		const a = html`<span>a</span>`.init().el
+		const b = html`<span>b</span>`.init().el
+		const c = html`<span>c</span>`.init().el
+		const frag = html`<div>${[a, b, c]}</div>`.init()
+		frag.commit()
+		frag.update(0, [b, c])
+		frag.commit()
+		expect(frag.el.textContent).toBe('bc')
+		expect(frag.el.contains(a)).toBe(false)
+		expect(frag.el.contains(b)).toBe(true)
+		expect(frag.el.contains(c)).toBe(true)
+	})
+
+	it('removes elements from the middle', () => {
+		const a = html`<span>a</span>`.init().el
+		const b = html`<span>b</span>`.init().el
+		const c = html`<span>c</span>`.init().el
+		const frag = html`<div>${[a, b, c]}</div>`.init()
+		frag.commit()
+		frag.update(0, [a, c])
+		frag.commit()
+		expect(frag.el.textContent).toBe('ac')
+		expect(frag.el.contains(a)).toBe(true)
+		expect(frag.el.contains(b)).toBe(false)
+		expect(frag.el.contains(c)).toBe(true)
+	})
+
+	it('grows from empty to multiple elements', () => {
+		const a = html`<span>a</span>`.init().el
+		const b = html`<span>b</span>`.init().el
+		const frag = html`<div>${[]}</div>`.init()
+		frag.commit()
+		expect(frag.el.textContent).toBe('')
+		frag.update(0, [a, b])
+		frag.commit()
+		expect(frag.el.textContent).toBe('ab')
+		expect(frag.el.contains(a)).toBe(true)
+		expect(frag.el.contains(b)).toBe(true)
+	})
+
+	it('keeps multiple elements already in position', () => {
+		const a = html`<span>a</span>`.init().el
+		const b = html`<span>b</span>`.init().el
+		const frag = html`<div>${[a, b]}</div>`.init()
+		frag.commit()
+		frag.update(0, [a, b])
+		frag.commit()
+		expect(frag.el.textContent).toBe('ab')
+		expect(frag.el.contains(a)).toBe(true)
+		expect(frag.el.contains(b)).toBe(true)
+	})
+
+	it('handles multi-level child trees being reordered', () => {
+		// prettier-ignore
+		const a = html`<div><span><em>deep-a</em></span></div>`.init().el
+		// prettier-ignore
+		const b = html`<div><span><em>deep-b</em></span></div>`.init().el
+		const frag = html`<div>${[a, b]}</div>`.init()
+		frag.commit()
+		expect(frag.el.textContent).toBe('deep-adeep-b')
+		frag.update(0, [b, a])
+		frag.commit()
+		expect(frag.el.textContent).toBe('deep-bdeep-a')
+		expect(a.textContent).toBe('deep-a')
+		expect(b.textContent).toBe('deep-b')
+	})
+
+	it('two independent slots in the same parent stay isolated', () => {
+		const a = html`<span>a</span>`.init().el
+		const b = html`<span>b</span>`.init().el
+		const c = html`<span>c</span>`.init().el
+		const d = html`<span>d</span>`.init().el
+		const frag = html`<div>${[a, b]}${[c, d]}</div>`.init()
+		frag.commit()
+		expect(frag.el.textContent).toBe('abcd')
+		frag.update(0, [b, a])
+		frag.commit()
+		expect(frag.el.textContent).toBe('bacd')
+		frag.update(1, [d])
+		frag.commit()
+		expect(frag.el.textContent).toBe('bad')
+	})
+})
+
 describe('disconnect behavior', () => {
 	it('runs cleanup when replacing a fragment', () => {
 		const cleanup = vi.fn()
